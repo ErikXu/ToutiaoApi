@@ -1,0 +1,72 @@
+﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
+using ToutiaoApi.Responses;
+
+namespace ToutiaoApi.Controllers
+{
+    /// <summary>
+    /// 广告组API
+    /// </summary>
+    [Route("api/campaigns")]
+    [ApiController]
+    public class CampaignsController : ControllerBase
+    {
+        private readonly IHttpRestClient _restClient;
+        private readonly IMemoryCache _cache;
+
+        public CampaignsController(IHttpRestClient restClient, IMemoryCache cache)
+        {
+            _restClient = restClient;
+            _cache = cache;
+        }
+
+        /// <summary>
+        /// 获取广告组（新版）
+        /// https://ad.toutiao.com/open_api/2/campaign/get/
+        /// </summary>
+        /// <param name="advertiserId">广告主ID</param>
+        /// <param name="page">页数，默认值: 1</param>
+        /// <param name="pageSize">页面大小，默认值: 10，最大值：100</param>
+        /// <returns></returns>
+        [HttpGet("get")]
+        public async Task<IActionResult> Get([FromQuery]string advertiserId, [FromQuery]int page = 1, [FromQuery]int pageSize = 10)
+        {
+            var url = "https://ad.toutiao.com/open_api/2/campaign/get/" + "?advertiser_id=" + advertiserId + "&page=" + page + "&page_size=" + pageSize;
+            var response = await _restClient.GetAsync<DynamicResponse>(url, _cache.Get<string>(ToutiaoCacheKey.AccessToken));
+            response.EnsureSuccess();
+            return Ok(response);
+        }
+
+        /// <summary>
+        /// 广告组列表（将废弃）
+        /// https://ad.toutiao.com/open_api/2/campaign/select/
+        /// </summary>
+        /// <param name="advertiserId">广告主ID</param>
+        /// <returns></returns>
+        [HttpGet("select")]
+        public async Task<IActionResult> Select([FromQuery] string advertiserId)
+        {
+            var url = "https://ad.toutiao.com/open_api/2/campaign/select/" + "?advertiser_id=" + advertiserId + "&fields=[\"id\",\"name\",\"budget\",\"budget_mode\",\"landing_type\",\"status\",\"modify_time\"]";
+            var response = await _restClient.GetAsync<DynamicResponse>(url, _cache.Get<string>(ToutiaoCacheKey.AccessToken));
+            response.EnsureSuccess();
+            return Ok(response);
+        }
+
+        /// <summary>
+        /// 广告组详细信息（将废弃）
+        /// https://ad.toutiao.com/open_api/2/campaign/read/
+        /// </summary>
+        /// <param name="advertiserId">广告主ID</param>
+        /// <param name="campaignIds">广告组ID集合，英文逗号分隔</param>
+        /// <returns></returns>
+        [HttpGet("read")]
+        public async Task<IActionResult> Read([FromQuery] string advertiserId, [FromQuery] string campaignIds)
+        {
+            var url = "https://ad.toutiao.com/open_api/2/campaign/read/" + "?advertiser_id=" + advertiserId + "&campaign_ids=[" + campaignIds + "]";
+            var response = await _restClient.GetAsync<DynamicResponse>(url, _cache.Get<string>(ToutiaoCacheKey.AccessToken));
+            response.EnsureSuccess();
+            return Ok(response);
+        }
+    }
+}
